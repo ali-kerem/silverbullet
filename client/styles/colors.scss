@@ -330,7 +330,23 @@ tbody tr:nth-of-type(even) {
 }
 
 .sb-highlight {
-  background-color: var(--editor-highlight-background-color);
+  // No border-radius: bold text or links split a highlight into adjacent
+  // spans, and rounded corners would notch the joins.
+  background-color: var(--editor-marker-background-color);
+  // Highlighted links and visible marks share this element in the editor, so
+  // retint the variables their own color rules read.
+  --editor-link-color: var(--editor-marker-link-color);
+  --editor-link-meta-color: var(--editor-marker-meta-color);
+  --editor-link-url-color: var(--editor-marker-meta-color);
+  --editor-naked-url-color: var(--editor-marker-link-color);
+  --editor-wiki-link-page-color: var(--editor-marker-link-color);
+  --editor-wiki-link-color: var(--editor-marker-meta-color);
+  --editor-meta-color: var(--editor-marker-meta-color);
+}
+
+// Zero specificity: link/mark colors on the same element take precedence.
+:where(.sb-highlight) {
+  color: var(--editor-marker-color);
 }
 
 .sb-line-fenced-code {

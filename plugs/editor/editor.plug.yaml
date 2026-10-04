@@ -220,7 +220,7 @@ functions:
   marker:
     path: ./text.ts:wrapSelection
     command:
-      name: "Text: Marker"
+      name: "Text: Highlight"
       key: "Ctrl-Alt-m"
       wrapper: "=="
       requireMode: rw

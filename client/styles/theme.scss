@@ -133,6 +133,11 @@ html {
   --editor-code-background-color: var(--subtle-background-color);
   --editor-struct-color: darkred;
   --editor-highlight-background-color: var(--highlight-color);
+  // ==Highlight== markup (search matches keep --editor-highlight-*).
+  --editor-marker-background-color: var(--highlight-color);
+  --editor-marker-color: currentColor;
+  --editor-marker-link-color: var(--editor-link-color);
+  --editor-marker-meta-color: var(--editor-meta-color);
   --editor-external-edit-color: rgba(255, 191, 71, 0.28);
   --editor-external-caret-color: #e8a33d;
   --editor-code-comment-color: var(--meta-subtle-color);
@@ -311,6 +316,11 @@ html[data-theme="light"] {
   --editor-code-background-color: var(--subtle-background-color);
   --editor-struct-color: #d6222e;
   --editor-highlight-background-color: var(--highlight-color);
+  // Opaque highlighter yellow with dark text, like a PDF highlight.
+  --editor-marker-background-color: #f5d547;
+  --editor-marker-color: #16130a;
+  --editor-marker-link-color: #1e3a8a;
+  --editor-marker-meta-color: #6b5a1a;
   --editor-external-edit-color: rgba(255, 191, 71, 0.18);
   --editor-external-caret-color: #d99a2b;
   --editor-code-comment-color: var(--meta-subtle-color);
