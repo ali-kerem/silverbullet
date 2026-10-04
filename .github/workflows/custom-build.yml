@@ -1,0 +1,110 @@
+name: Custom SilverBullet build
+
+on:
+  push:
+    branches:
+      - custom/heading-folds
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: custom-silverbullet-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    if: github.repository == 'ali-kerem/silverbullet'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: "1"
+      NODE_OPTIONS: --max-old-space-size=3072
+      RUSTUP_TOOLCHAIN: "1.99.0"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    steps:
+      - name: Checkout custom branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+
+      - name: Install native build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends musl-tools build-essential pkg-config file binutils
+          rustup toolchain install 1.99.0 --profile minimal
+          rustup target add x86_64-unknown-linux-musl
+          node --version
+          rustc --version
+          mkdir -p output
+
+      - name: Install frontend dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build and check frontend
+        run: |
+          npm run build
+          npm run check
+          npx biome check client/codemirror/heading_fold_gutter.ts client/codemirror/editor_state.ts browser-tests/editor/fold-gutter.test.ts
+          npx vitest run --maxWorkers=1 client/codemirror
+
+      - name: Test fold controls and layout in Chromium
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test --config=playwright.browser.config.ts --workers=1
+          cp test-results/browser-results.json output/browser-test-results.json
+
+      - name: Build self-contained Linux x86-64 server
+        run: cargo build --locked --release -p silverbullet --target x86_64-unknown-linux-musl -j 1
+
+      - name: Test the embedded release frontend
+        run: |
+          mkdir -p target/release
+          ln -s ../x86_64-unknown-linux-musl/release/silverbullet target/release/silverbullet
+          npx playwright test --project=release --workers=1
+          cp test-results/e2e-results.json output/release-test-results.json
+
+      - name: Verify and package binary
+        run: |
+          BIN=target/x86_64-unknown-linux-musl/release/silverbullet
+          file "$BIN"
+          python3 scripts/verify-custom-binary.py "$BIN"
+          "$BIN" --version
+          "$BIN" --help > output/silverbullet-help.txt
+          cp "$BIN" output/silverbullet-linux-amd64
+          cp version.json output/version.json
+          git rev-parse HEAD > output/source-commit.txt
+          git diff 1340f7369e782a9c99e898de75cd588051fdb7cd HEAD > output/custom-source.patch
+          (cd output && sha256sum silverbullet-linux-amd64 > silverbullet-linux-amd64.sha256)
+          tar -czf silverbullet-heading-folds-linux-amd64.tar.gz -C output .
+          sha256sum silverbullet-heading-folds-linux-amd64.tar.gz > silverbullet-heading-folds-linux-amd64.tar.gz.sha256
+
+      - name: Upload tested binary and provenance
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: silverbullet-heading-folds-linux-amd64-${{ github.sha }}
+          path: |
+            silverbullet-heading-folds-linux-amd64.tar.gz
+            silverbullet-heading-folds-linux-amd64.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: custom-test-diagnostics-${{ github.sha }}
+          path: |
+            test-results
+            output/*test-results.json
+            heading-expanded.png
+            heading-collapsed.png
+          if-no-files-found: ignore
+          retention-days: 14

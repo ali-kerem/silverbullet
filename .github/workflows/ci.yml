@@ -2,6 +2,9 @@ name: CI
 
 on:
   push:
+    # Custom builds have their own least-privilege, single-target workflow.
+    branches-ignore:
+      - "custom/**"
   pull_request:
   workflow_dispatch:
 
