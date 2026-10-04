@@ -1010,10 +1010,67 @@ $comment-border: 1px;
   // Bare image/video embeds: shrink the frame to the (possibly resized) media
   // and center it. Page transclusions wrap their HTML in a span, so they keep
   // the full-width frame.
-  .sb-inline-content:has(> div > .content > :is(img, video)) {
+  .sb-inline-content:has(> div > .content > :is(img, video, .sb-image-resizer)) {
     width: fit-content;
     max-width: 100%;
     margin-inline: auto;
+  }
+
+  .sb-image-resizer {
+    position: relative;
+    width: fit-content;
+
+    >img {
+      display: block;
+      max-width: 100%;
+    }
+  }
+
+  .sb-image-resize-handle {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    width: 6px;
+    height: min(48px, 40%);
+    transform: translateY(-50%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    cursor: ew-resize;
+    touch-action: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+
+    // Larger hit area than the visible bar.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -8px -10px;
+    }
+  }
+
+  .sb-image-resize-left {
+    left: 8px;
+  }
+
+  .sb-image-resize-right {
+    right: 8px;
+  }
+
+  .sb-image-resizer:hover>.sb-image-resize-handle,
+  .sb-image-resizing>.sb-image-resize-handle {
+    opacity: 1;
+  }
+
+  .sb-image-resizing {
+    cursor: ew-resize;
+    user-select: none;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .sb-image-resize-handle {
+      opacity: 0.8;
+    }
   }
 
   .sb-fenced-code-iframe {

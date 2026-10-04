@@ -21,6 +21,7 @@ import {
   readTransclusionContent,
 } from "../markdown_renderer/inline.ts";
 import { renderMarkdownToHtml } from "../markdown_renderer/markdown_render.ts";
+import { inlineContentCacheKey, makeResizableImage } from "./image_resize.ts";
 import { LoadingWidget } from "./loading_widget.ts";
 import { LuaWidget } from "./lua_widget.ts";
 import {
@@ -81,7 +82,7 @@ export function inlineContentPlugin(client: Client) {
           Decoration.widget({
             widget: new LuaWidget({
               client,
-              cacheKey: `widget:${client.currentPath()}:${text}`,
+              cacheKey: inlineContentCacheKey(client, text),
               expressionText: text,
               codeText: text,
               renderEmpty: true,
@@ -145,7 +146,12 @@ export function inlineContentPlugin(client: Client) {
                         `Unsupported content: ${transclusion.url}`,
                       );
                     }
-                    content = { html: element };
+                    content = {
+                      html:
+                        element instanceof HTMLImageElement
+                          ? makeResizableImage(element, client, text)
+                          : element,
+                    };
                   }
 
                   return {
