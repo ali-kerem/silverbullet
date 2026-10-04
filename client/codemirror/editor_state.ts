@@ -64,6 +64,7 @@ import {
   frontmatterFoldPlaceholderDOM,
   prepareFrontmatterFoldPlaceholder,
 } from "./frontmatter_folding.ts";
+import { headingFoldGutter } from "./heading_fold_gutter.ts";
 import { inlineContentPlugin } from "./inline_content.ts";
 import { lineWrapper } from "./line_wrapper.ts";
 import { plugLinter } from "./lint.ts";
@@ -245,6 +246,7 @@ export function buildPageExtensions(
         frontmatterFoldPlaceholderDOM(view, onclick, prepared, client),
     }),
     frontmatterFoldingExtension(client),
+    headingFoldGutter(),
     ...cleanModePlugins(client),
     EditorView.lineWrapping,
     plugLinter(client),

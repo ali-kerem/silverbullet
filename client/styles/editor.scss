@@ -136,6 +136,30 @@ $comment-border: 1px;
     border-right: none;
   }
 
+  // Keep folding controls next to the centered text, not at the viewport edge.
+  .cm-scroller:has(> .cm-gutters > .cm-foldGutter) {
+    padding-inline: max(0px, calc((100% - var(--editor-width)) / 2));
+  }
+
+  .cm-foldGutter .cm-gutterElement {
+    width: 24px;
+    padding-inline: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .cm-foldGutter .cm-gutterElement > span {
+    font-size: 0.7em;
+    line-height: 1;
+  }
+
+  .cm-foldGutter .cm-gutterElement:hover {
+    color: var(--editor-heading-color);
+  }
+
   .sb-external-delete-marker {
     position: relative;
     display: inline-block;

@@ -43,6 +43,12 @@ These commands work on different types of content depending on where your cursor
 
 ## Folding
 
+Click the triangle in the left gutter beside a foldable heading:
+`▼` collapses its content and `▶` expands it again. The controls are vertically
+centered on the heading. This changes only the editor view, not the Markdown.
+Lists and fenced code do not have gutter triangles; the folding commands below
+remain available for those blocks.
+
 * `Outline: Fold`: folds the current item’s children
 * `Outline: Unfold`: unfolds the current item’s children
 * `Outline: Toggle Fold` (`Mod-. Mod-.`): toggles the current item’s fold state
