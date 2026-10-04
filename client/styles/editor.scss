@@ -1007,6 +1007,15 @@ $comment-border: 1px;
     overflow: hidden;
   }
 
+  // Bare image/video embeds: shrink the frame to the (possibly resized) media
+  // and center it. Page transclusions wrap their HTML in a span, so they keep
+  // the full-width frame.
+  .sb-inline-content:has(> div > .content > :is(img, video)) {
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
   .sb-fenced-code-iframe {
     background-color: transparent;
 
