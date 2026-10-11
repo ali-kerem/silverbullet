@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - custom/heading-folds
+      - custom/table-widths
   workflow_dispatch:
 
 permissions:
@@ -52,7 +53,7 @@ jobs:
         run: |
           npm run build
           npm run check
-          npx biome check client/codemirror/heading_fold_gutter.ts client/codemirror/editor_state.ts browser-tests/editor/fold-gutter.test.ts
+          npx biome check client/codemirror/heading_fold_gutter.ts client/codemirror/editor_state.ts client/codemirror/table.ts client/codemirror/table_resize.ts client/codemirror/table_resize.test.ts e2e/release/table-resize.test.ts browser-tests/editor/fold-gutter.test.ts
           npx vitest run --maxWorkers=1 client/codemirror
 
       - name: Test fold controls and layout in Chromium

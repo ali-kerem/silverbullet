@@ -8,6 +8,9 @@ This fork's `custom/heading-folds` branch starts at the installed SilverBullet r
 - Triangle controls are vertically centered at every heading level.
 - Existing list/code folding commands remain available.
 - Browser tests cover layout, folding, edits, and unchanged Markdown; a release integration test exercises the embedded client.
+- `custom/table-widths` extends installed revision `2ee76b649c110e071e9e352f8593bb14fdaafd03` with draggable table-column boundaries. Drag any interior divider to redistribute the two adjacent columns without changing the overall table width. Arrow keys adjust a focused divider (Shift for one-pixel steps), Escape cancels a drag, and double-click/Home or **Reset column widths** restores automatic sizing.
+- Table widths are relative proportions stored only in the browser's space-scoped client datastore, not in Markdown. They survive reload and body edits, and do not sync across browsers/devices. Identity is page path + source header + occurrence among matching headers: renaming the page, changing a header, or inserting/reordering duplicate-header tables can reset/reassign the preference. Clearing local client data clears widths. Rendered Markdown table widgets are supported; dynamically generated Lua/HTML tables are not included.
+- Embedded-release tests verify dragging, persistence, responsiveness, reset/cancel/keyboard controls, independent tables/pages, ordinary cell editing, and unchanged Markdown.
 
 ## Builds
 
