@@ -9,7 +9,9 @@ const text = `# Tables\n\nBefore.\n\n${tableText}\n\nBetween.\n\n${tableText}\n\
 const widgets = (page: Page) => page.locator(".sb-table-widget");
 const widths = (widget: Locator) =>
   widget
-    .locator("th")
+    .locator("tr")
+    .first()
+    .locator("th, td")
     .evaluateAll((cells) =>
       cells.map((cell) => cell.getBoundingClientRect().width),
     );
