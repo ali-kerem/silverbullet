@@ -40,14 +40,14 @@ async function drag(page: Page, widget: Locator, index: number, delta: number) {
 
 async function savedWidths(page: Page, occurrence = 0) {
   return page.evaluate(
-    (n) =>
-      (globalThis as any).client.ds.get([
+    async (n) =>
+      (await (globalThis as any).client.ds.get([
         "client",
         "tableColumnWidths",
         "TableTest.md",
         "| Name | Description | Score |",
         String(n),
-      ]),
+      ])) ?? null,
     occurrence,
   );
 }
@@ -92,7 +92,7 @@ test("drag preserves total width, Markdown, other tables and survives reload", a
         () => (globalThis as any).client.editorView.state.selection.main.anchor,
       ),
     ).toBe(selection);
-    await expect.poll(() => savedWidths(page)).not.toBeNull();
+    await expect.poll(() => savedWidths(page)).toHaveLength(3);
     expect(await savedWidths(page, 1)).toBeNull();
     const ratios = await savedWidths(page);
     await page.reload();
@@ -136,7 +136,7 @@ test("reset, keyboard adjustment and cancelled drags do not enter source editing
     const handle = first.locator(".sb-table-column-handle").first();
     await handle.focus();
     await handle.press("ArrowRight");
-    await expect.poll(() => savedWidths(page)).not.toBeNull();
+    await expect.poll(() => savedWidths(page)).toHaveLength(3);
     const committed = await savedWidths(page);
     const before = await widths(first);
     const rect = (await handle.boundingBox())!;
@@ -152,7 +152,7 @@ test("reset, keyboard adjustment and cancelled drags do not enter source editing
     await expect(first.locator("colgroup")).toHaveCount(0);
     await expect.poll(() => savedWidths(page)).toBeNull();
     await drag(page, first, 0, 40);
-    await expect.poll(() => savedWidths(page)).not.toBeNull();
+    await expect.poll(() => savedWidths(page)).toHaveLength(3);
     await handle.dblclick({ position: { x: 5, y: 16 } });
     await expect.poll(() => savedWidths(page)).toBeNull();
     await page.reload();
@@ -177,7 +177,7 @@ test("normal cell editing still works and body edits preserve widths", async ({
     await writeFile(join(server.spaceDir, "OtherPage.md"), text);
     await ready(page, server.url);
     await drag(page, widgets(page).first(), 0, 45);
-    await expect.poll(() => savedWidths(page)).not.toBeNull();
+    await expect.poll(() => savedWidths(page)).toHaveLength(3);
     const saved = await savedWidths(page);
     await widgets(page).first().locator("td").first().click();
     // The clicked table reveals its editable Markdown; the other stays rendered.
