@@ -18,6 +18,10 @@ const widths = (widget: Locator) =>
 
 async function ready(page: Page, url: string) {
   await page.goto(`${url}/TableTest?headless=1`);
+  // Initial Lua/index readiness rebuilds the editor; visible tables alone
+  // do not mean their DOM is ready for a continuous pointer gesture.
+  await page.waitForFunction(() => !!(globalThis as any).client?.widgetsReady);
+  await page.evaluate(() => (globalThis as any).client.widgetsReady);
   await expect(widgets(page)).toHaveCount(2);
   await expect(
     widgets(page).first().locator(".sb-table-column-handle"),
@@ -29,6 +33,9 @@ async function ready(page: Page, url: string) {
 
 async function drag(page: Page, widget: Locator, index: number, delta: number) {
   const handle = widget.locator(".sb-table-column-handle").nth(index);
+  // Resets can move the divider on the next animation frame. Use Playwright's
+  // stability/hit-target checks before taking coordinates for the drag.
+  await handle.hover({ position: { x: 5, y: 16 } });
   const rect = (await handle.boundingBox())!;
   await page.mouse.move(rect.x + rect.width / 2, rect.y + 16);
   await page.mouse.down();
