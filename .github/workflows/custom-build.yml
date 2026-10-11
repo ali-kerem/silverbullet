@@ -69,7 +69,7 @@ jobs:
         run: |
           mkdir -p target/release
           ln -s ../x86_64-unknown-linux-musl/release/silverbullet target/release/silverbullet
-          npx playwright test --project=release --workers=1
+          npx playwright test --project=release --workers=1 --retries=0 --repeat-each=3
           cp test-results/e2e-results.json output/release-test-results.json
 
       - name: Verify and package binary

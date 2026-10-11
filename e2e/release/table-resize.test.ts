@@ -139,12 +139,39 @@ test("reset, keyboard adjustment and cancelled drags do not enter source editing
     await expect.poll(() => savedWidths(page)).toHaveLength(3);
     const committed = await savedWidths(page);
     const before = await widths(first);
+    const selection = await page.evaluate(
+      () => (globalThis as any).client.editorView.state.selection.main.anchor,
+    );
+    await handle.evaluate((element) => {
+      element.addEventListener(
+        "pointerdown",
+        (event) => {
+          element.dataset.testPointerId = String(
+            (event as PointerEvent).pointerId,
+          );
+        },
+        { once: true },
+      );
+    });
     const rect = (await handle.boundingBox())!;
     await page.mouse.move(rect.x + 5, rect.y + 16);
     await page.mouse.down();
     await page.mouse.move(rect.x + 65, rect.y + 16, { steps: 5 });
     await page.keyboard.press("Escape");
+    // Cancellation must not release capture early: that retargets the final
+    // click to a cell and reveals the table's Markdown source.
+    expect(
+      await handle.evaluate((element) =>
+        element.hasPointerCapture(Number(element.dataset.testPointerId)),
+      ),
+    ).toBe(true);
     await page.mouse.up();
+    await expect(widgets(page)).toHaveCount(2);
+    expect(
+      await page.evaluate(
+        () => (globalThis as any).client.editorView.state.selection.main.anchor,
+      ),
+    ).toBe(selection);
     expect(await savedWidths(page)).toEqual(committed);
     const cancelled = await widths(first);
     expect(Math.abs(cancelled[0] - before[0])).toBeLessThan(2);
@@ -160,6 +187,56 @@ test("reset, keyboard adjustment and cancelled drags do not enter source editing
       widgets(page).first().locator(".sb-table-column-handle"),
     ).toHaveCount(2);
     await expect(widgets(page).first().locator("colgroup")).toHaveCount(0);
+    expect(await readFile(join(server.spaceDir, "TableTest.md"), "utf8")).toBe(
+      text,
+    );
+  } finally {
+    await server.stop();
+  }
+});
+
+test("Escape cancellation remains safe when the pointer leaves the table", async ({
+  page,
+}) => {
+  const server = await startReleaseServer();
+  try {
+    await writeFile(join(server.spaceDir, "TableTest.md"), text);
+    await ready(page, server.url);
+    const first = widgets(page).first();
+    await drag(page, first, 0, 35);
+    await expect.poll(() => savedWidths(page)).toHaveLength(3);
+    const committed = await savedWidths(page);
+    const selection = await page.evaluate(
+      () => (globalThis as any).client.editorView.state.selection.main.anchor,
+    );
+    for (let iteration = 0; iteration < 6; iteration++) {
+      const handle = first.locator(".sb-table-column-handle").first();
+      const rect = (await handle.boundingBox())!;
+      await page.mouse.move(rect.x + 5, rect.y + 16);
+      await page.mouse.down();
+      await page.mouse.move(rect.x + 70, rect.y + 16, { steps: 5 });
+      await page.keyboard.press("Escape");
+      // Let the restored column boundary move away from the physical pointer.
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      if (iteration % 2 === 0) await page.mouse.move(10, 10);
+      await page.mouse.up();
+      await expect(widgets(page)).toHaveCount(2);
+      expect(await savedWidths(page)).toEqual(committed);
+      expect(
+        await page.evaluate(
+          () =>
+            (globalThis as any).client.editorView.state.selection.main.anchor,
+        ),
+      ).toBe(selection);
+    }
+    // A genuine subsequent cell click must still reveal its source.
+    await first.locator("td").first().click();
+    await expect(widgets(page)).toHaveCount(1);
     expect(await readFile(join(server.spaceDir, "TableTest.md"), "utf8")).toBe(
       text,
     );

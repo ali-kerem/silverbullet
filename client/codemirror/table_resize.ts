@@ -71,7 +71,7 @@ export function attachTableResize(
   let disposed = false;
   let interacted = false;
   let raf = 0;
-  let cancelDrag: (() => void) | undefined;
+  let cancelDrag: ((waitForRelease?: boolean) => void) | undefined;
   let writes = Promise.resolve();
   const events = new AbortController();
   const handles: HTMLElement[] = [];
@@ -191,7 +191,7 @@ export function attachTableResize(
         event.preventDefault();
         event.stopPropagation();
         if (event.key === "Escape") {
-          cancelDrag?.();
+          cancelDrag?.(true);
           return;
         }
         if (event.key === "Home") {
@@ -223,6 +223,7 @@ export function attachTableResize(
         const startX = event.clientX;
         const pointerId = event.pointerId;
         let moved = false;
+        let cancelled = false;
         const dragEvents = new AbortController();
         frame.classList.add("sb-table-resizing");
         handle.focus({ preventScroll: true });
@@ -237,11 +238,22 @@ export function attachTableResize(
           if (commit && moved) persist();
           else apply(original);
         };
-        cancelDrag = () => finish(false);
+        cancelDrag = (waitForRelease = false) => {
+          if (!waitForRelease) {
+            finish(false);
+            return;
+          }
+          // Escape restores the preview immediately, but the pointer is still
+          // down. Keep capture until pointerup so its compatibility click stays
+          // on the handle instead of becoming a table cell's click-to-edit.
+          cancelled = true;
+          frame.classList.remove("sb-table-resizing");
+          apply(original);
+        };
         handle.addEventListener(
           "pointermove",
           (move) => {
-            if (move.pointerId !== pointerId) return;
+            if (move.pointerId !== pointerId || cancelled) return;
             const delta = move.clientX - startX;
             if (!moved && Math.abs(delta) < 2) return;
             moved = true;
@@ -257,7 +269,7 @@ export function attachTableResize(
         handle.addEventListener(
           "pointerup",
           (up) => {
-            if (up.pointerId === pointerId) finish(true);
+            if (up.pointerId === pointerId) finish(!cancelled);
           },
           { signal: dragEvents.signal },
         );
